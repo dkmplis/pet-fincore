@@ -1,8 +1,8 @@
-package by.dkmplis.ledgerservice.entities;
+package by.dkmplis.ledgerservice.domain.model;
 
-import by.dkmplis.ledgerservice.enums.AccountClass;
-import by.dkmplis.ledgerservice.enums.AccountPurpose;
-import by.dkmplis.ledgerservice.enums.AccountStatus;
+import by.dkmplis.ledgerservice.domain.enums.AccountClass;
+import by.dkmplis.ledgerservice.domain.enums.AccountPurpose;
+import by.dkmplis.ledgerservice.domain.enums.AccountStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

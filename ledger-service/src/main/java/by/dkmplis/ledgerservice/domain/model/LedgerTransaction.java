@@ -1,7 +1,7 @@
-package by.dkmplis.ledgerservice.entities;
+package by.dkmplis.ledgerservice.domain.model;
 
-import by.dkmplis.ledgerservice.enums.LedgerTransactionType;
-import by.dkmplis.ledgerservice.enums.TransactionState;
+import by.dkmplis.ledgerservice.domain.enums.LedgerTransactionType;
+import by.dkmplis.ledgerservice.domain.enums.TransactionState;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

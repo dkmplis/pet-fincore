@@ -1,12 +1,11 @@
-package by.dkmplis.ledgerservice.entities;
+package by.dkmplis.ledgerservice.domain.model;
 
-import by.dkmplis.ledgerservice.enums.PostingSide;
+import by.dkmplis.ledgerservice.domain.enums.PostingSide;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
 

@@ -1,4 +1,4 @@
-package by.dkmplis.ledgerservice.enums;
+package by.dkmplis.ledgerservice.domain.enums;
 
 import lombok.Getter;
 
