@@ -343,6 +343,81 @@ public class LedgerPostingServiceTest {
         }
     }
 
+    @Test
+    void shouldHandleConcurrentIdempotentReplay()
+            throws InterruptedException, ExecutionException, TimeoutException {
+        UUID operationId = UUID.randomUUID();
+
+        PostLedgerTransactionCommand command = createCommand(
+                operationId,
+                settlementId,
+                aliceId,
+                100_00L,
+                LedgerTransactionType.FUNDING
+        );
+
+        try (ExecutorService executorService =
+                Executors.newFixedThreadPool(2)) {
+            CountDownLatch ready = new CountDownLatch(2);
+            CountDownLatch start = new CountDownLatch(1);
+
+            Callable<PostLedgerTransactionResult> task = () -> {
+                ready.countDown();
+                start.countDown();
+                return postingService.post(command);
+            };
+
+            Future<PostLedgerTransactionResult> first = executorService.submit(task);
+            Future<PostLedgerTransactionResult> second = executorService.submit(task);
+
+            assertThat(
+                    ready.await(
+                            5,
+                            TimeUnit.SECONDS
+                    )
+            ).isTrue();
+
+            start.countDown();
+
+            PostLedgerTransactionResult firstResult =
+                    first.get(
+                            10,
+                            TimeUnit.SECONDS
+                    );
+
+            PostLedgerTransactionResult secondResult =
+                    second.get(
+                            10,
+                            TimeUnit.SECONDS
+                    );
+
+            assertThat(firstResult.transactionId())
+                    .isEqualTo(
+                            secondResult.transactionId()
+                    );
+
+            assertThat(
+                    List.of(
+                            firstResult.replayed(),
+                            secondResult.replayed()
+                    )
+            )
+                    .containsExactlyInAnyOrder(
+                            false,
+                            true
+                    );
+
+            assertThat(transactionRepository.count())
+                    .isEqualTo(1);
+
+            assertThat(entryRepository.count())
+                    .isEqualTo(2);
+
+            assertThat(balance(aliceId))
+                    .isEqualTo(100_00L);
+        }
+    }
+
     private void fundAlice(long amountMinor) {
         postingService.post(
             createCommand(

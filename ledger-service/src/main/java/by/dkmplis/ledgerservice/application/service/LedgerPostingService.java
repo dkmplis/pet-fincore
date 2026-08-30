@@ -11,6 +11,7 @@ import by.dkmplis.ledgerservice.domain.model.LedgerEntry;
 import by.dkmplis.ledgerservice.domain.model.LedgerTransaction;
 import by.dkmplis.ledgerservice.infrastructure.persistence.repositories.LedgerAccountRepository;
 import by.dkmplis.ledgerservice.infrastructure.persistence.repositories.LedgerEntryRepository;
+import by.dkmplis.ledgerservice.infrastructure.persistence.repositories.LedgerOperationLock;
 import by.dkmplis.ledgerservice.infrastructure.persistence.repositories.LedgerTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class LedgerPostingService {
     private final LedgerBalanceService balanceService;
     private final RequestFingerprintCalculator fingerprintCalculator;
     private final LedgerEntryRepository entryRepository;
+    private final LedgerOperationLock operationLock;
 
     @Transactional
     public PostLedgerTransactionResult post(
@@ -37,6 +39,8 @@ public class LedgerPostingService {
         String fingerprint = fingerprintCalculator.calculate(
                 postLedgerTransactionCommand
         );
+
+        operationLock.lock(postLedgerTransactionCommand.externalOperationId());
 
         Optional<LedgerTransaction> existing =
                 transactionRepository.findByExternalOperationId(
@@ -59,22 +63,6 @@ public class LedgerPostingService {
 
         validateAllAccountsExisting(accountIds, lockedAccounts);
 
-        /*
-         * Важный второй idempotency check.
-         *
-         * Если параллельный запрос ждал account lock,
-         * первый запрос уже мог успеть закоммититься.
-         */
-        existing = transactionRepository.findByExternalOperationId(
-                postLedgerTransactionCommand.externalOperationId()
-        );
-
-        if (existing.isPresent()) {
-            return resolveExisting(
-                    existing.get(),
-                    fingerprint
-            );
-        }
         Map<UUID, LedgerAccount> accounts = lockedAccounts.stream()
                 .collect(Collectors.toMap(
                         LedgerAccount::getId,
