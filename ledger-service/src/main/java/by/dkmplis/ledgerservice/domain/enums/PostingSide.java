@@ -2,5 +2,11 @@ package by.dkmplis.ledgerservice.domain.enums;
 
 public enum PostingSide {
     DEBIT,
-    CREDIT
+    CREDIT;
+
+    public PostingSide opposite() {
+        return this == DEBIT
+                ? CREDIT
+                : DEBIT;
+    }
 }
