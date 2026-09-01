@@ -54,7 +54,7 @@ public class LedgerTransaction {
 
     public void post() {
         if (state != TransactionState.DRAFT) {
-            throw new IllegalStateException("Размещать можно только DRAFT транзакций.");
+            throw new IllegalStateException("Only DRAFT transaction can be posted");
         }
         this.state = TransactionState.POSTED;
     }
