@@ -17,5 +17,26 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  transfer-db:
+    image: postgres:17
+    container_name: fincore-transfer-db
+
+    environment:
+      POSTGRES_DB: transfer
+      POSTGRES_USER: transfer
+      POSTGRES_PASSWORD: transfer
+
+    ports:
+      - "5433:5432"
+    volumes:
+      - transfer-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U transfer -d transfer" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   ledger-db-data:
+  transfer-db-data:
