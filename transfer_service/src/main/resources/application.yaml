@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: transfer-service
+  datasource:
+    url: jdbc:postgresql://localhost:5433/transfer
+    username: transfer
+    password: transfer
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  liquibase:
+    enabled: true
+
+server:
+  port: 8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
