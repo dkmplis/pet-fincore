@@ -27,3 +27,9 @@ management:
         include:
           - health
           - info
+
+clients:
+  ledger:
+    base-url : ${LEDGER_BASE_URL:http://localhost:8081}
+    connect-timeout: 2s
+    read-timeout: 5s

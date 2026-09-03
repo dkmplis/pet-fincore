@@ -86,6 +86,7 @@ public class Transfer {
         this.state = TransferState.PENDING;
 
         Instant now = Instant.now();
+
         this.createdAt = now;
         this.updatedAt = now;
     }
