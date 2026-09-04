@@ -7,6 +7,7 @@ import by.dkmplis.ledgerservice.application.command.PostLedgerTransactionCommand
 import by.dkmplis.ledgerservice.application.command.PostLedgerTransactionResult;
 import by.dkmplis.ledgerservice.application.command.ReverseLedgerTransactionCommand;
 import by.dkmplis.ledgerservice.application.exception.IdempotencyConflictException;
+import by.dkmplis.ledgerservice.application.exception.LedgerTransactionAlreadyReversedException;
 import by.dkmplis.ledgerservice.application.exception.LedgerTransactionNotFoundException;
 import by.dkmplis.ledgerservice.application.service.LedgerPostingService;
 import by.dkmplis.ledgerservice.application.service.LedgerReversalService;
@@ -18,6 +19,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
 
@@ -36,6 +38,7 @@ class LedgerTransactionControllerTest {
 
     private static final String IDEMPOTENCY_KEY =
             "Idempotency-Key";
+
 
     @Autowired
     private MockMvc mockMvc;
@@ -293,6 +296,78 @@ class LedgerTransactionControllerTest {
                                 )
                 )
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldReturnConflictWhenTransactionAlreadyReversed()
+            throws Exception {
+
+        UUID transactionId = UUID.randomUUID();
+        UUID operationId = UUID.randomUUID();
+
+        LedgerTransactionAlreadyReversedException exception =
+                mock(
+                        LedgerTransactionAlreadyReversedException.class
+                );
+
+        when(exception.getMessage())
+                .thenReturn("Transaction already reversed");
+
+        when(reversalService.reverse(
+                any(ReverseLedgerTransactionCommand.class)
+        )).thenThrow(exception);
+
+        mockMvc.perform(
+                        post(
+                                TRANSACTIONS_URL
+                                        + "/{transactionId}/reversal",
+                                transactionId
+                        )
+                                .header(
+                                        IDEMPOTENCY_KEY,
+                                        operationId
+                                )
+                )
+                .andExpect(status().isConflict())
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(409)
+                )
+                .andExpect(
+                        jsonPath("$.code")
+                                .value(
+                                        "LEDGER_TRANSACTION_ALREADY_REVERSED"
+                                )
+                );
+    }
+
+
+    @Test
+    void shouldReturnBadRequestForInvalidTransactionId()
+            throws Exception {
+
+        mockMvc.perform(
+                        post(
+                                TRANSACTIONS_URL
+                                        + "/{transactionId}/reversal",
+                                "not-a-uuid"
+                        )
+                                .header(
+                                        IDEMPOTENCY_KEY,
+                                        UUID.randomUUID()
+                                )
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.status")
+                                .value(400)
+                )
+                .andExpect(
+                        jsonPath("$.code")
+                                .value("INVALID_REQUEST")
+                );
+
+        verifyNoInteractions(reversalService);
     }
 
 

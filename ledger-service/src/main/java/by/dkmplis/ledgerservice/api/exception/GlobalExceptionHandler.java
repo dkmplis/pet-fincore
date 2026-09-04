@@ -8,8 +8,12 @@ import by.dkmplis.ledgerservice.application.exception.LedgerTransactionAlreadyRe
 import by.dkmplis.ledgerservice.application.exception.LedgerTransactionNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 
@@ -28,7 +32,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(LedgerTransactionAlreadyReversedException.class)
-    public ResponseEntity<ApiError> handleConflict(
+    public ResponseEntity<ApiError> handleAlreadyReversed(
             LedgerTransactionAlreadyReversedException exception
     ) {
         return error(
@@ -39,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IdempotencyConflictException.class)
-    public ResponseEntity<ApiError> handleConflict(
+    public ResponseEntity<ApiError> handleIdempotencyConflict(
             IdempotencyConflictException exception
     ) {
         return error(
@@ -50,7 +54,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InsufficientFundsException.class)
-    public ResponseEntity<ApiError> handleConflict(
+    public ResponseEntity<ApiError> handleInsufficientFunds(
             InsufficientFundsException exception
     ) {
         return error(
@@ -61,16 +65,75 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> handleValidation(
+            MethodArgumentNotValidException exception
+    ) {
+        String message = exception
+                .getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .findFirst()
+                .map(error ->
+                        "%s: %s".formatted(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
+                )
+                .orElse("Request validation failed");
+
+        return invalidRequest(message);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ApiError> handleMissingHeader(
+            MissingRequestHeaderException exception
+    ) {
+        return invalidRequest(
+                "Required request header '%s' is missing"
+                        .formatted(exception.getHeaderName())
+        );
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception
+    ) {
+        return invalidRequest(
+                "Invalid value for '%s'"
+                        .formatted(exception.getName())
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleUnreadableBody(
+            HttpMessageNotReadableException exception
+    ) {
+        return invalidRequest(
+                "Request body is malformed"
+        );
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiError> handleBadRequest(
+    public ResponseEntity<ApiError> handleIllegalArgument(
             IllegalArgumentException exception
     ) {
-        return error(
-                HttpStatus.BAD_REQUEST,
-                LedgerErrorCode.INVALID_REQUEST,
+        return invalidRequest(
                 exception.getMessage()
         );
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleUnexpected(
+            Exception exception
+    ) {
+        return error(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                LedgerErrorCode.INTERNAL_ERROR,
+                "Unexpected internal error"
+        );
+    }
+
 
     private ResponseEntity<ApiError> error(
             HttpStatus status,
@@ -85,5 +148,15 @@ public class GlobalExceptionHandler {
                         message,
                         Instant.now()
                 ));
+    }
+
+    private ResponseEntity<ApiError> invalidRequest(
+            String message
+    ) {
+        return error(
+                HttpStatus.BAD_REQUEST,
+                LedgerErrorCode.INVALID_REQUEST,
+                message
+        );
     }
 }
