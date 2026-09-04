@@ -1,8 +1,10 @@
 package by.dkmplis.transfer_service.application.service;
 
+import by.dkmplis.transfer_service.api.dto.TransferDetailsResult;
 import by.dkmplis.transfer_service.application.command.CreateTransferCommand;
 import by.dkmplis.transfer_service.application.command.CreateTransferResult;
 import by.dkmplis.transfer_service.application.exception.TransferIdempotencyConflictException;
+import by.dkmplis.transfer_service.application.exception.TransferNotFoundException;
 import by.dkmplis.transfer_service.domain.model.Transfer;
 import by.dkmplis.transfer_service.infrastructure.persistence.TransferOperationLockRepository;
 import by.dkmplis.transfer_service.infrastructure.persistence.TransferRepository;
@@ -55,6 +57,26 @@ public class TransferService {
                 savedTransfer.getId(),
                 transfer.getState(),
                 false
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public TransferDetailsResult get(UUID transferId) {
+        Transfer transfer = transferRepository
+                .findById(transferId)
+                .orElseThrow(
+                        () -> new TransferNotFoundException(
+                                transferId
+                        )
+                );
+
+        return new TransferDetailsResult(
+                transfer.getId(),
+                transfer.getFromAccountId(),
+                transfer.getToAccountId(),
+                transfer.getCurrency(),
+                transfer.getAmountMinor(),
+                transfer.getState()
         );
     }
 
