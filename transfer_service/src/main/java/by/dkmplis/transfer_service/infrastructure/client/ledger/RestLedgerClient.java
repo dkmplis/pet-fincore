@@ -23,6 +23,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RestLedgerClient implements LedgerClient {
 
+    private static final String TRANSACTIONS_PATH =
+            "/api/v1/ledger/transactions";
+
+    private static final String IDEMPOTENCY_KEY_HEADER =
+            "Idempotency-Key";
+
     private static final String INSUFFICIENT_FUNDS =
             "INSUFFICIENT_FUNDS";
 
@@ -40,9 +46,9 @@ public class RestLedgerClient implements LedgerClient {
 
         try {
             LedgerTransactionResponse response = restClient.post()
-                    .uri("/api/v1/ledger/transactions")
+                    .uri(TRANSACTIONS_PATH)
                     .header(
-                            "Idempotency-Key",
+                            IDEMPOTENCY_KEY_HEADER,
                             command.ledgerOperationId().toString()
                     )
                     .body(request)
