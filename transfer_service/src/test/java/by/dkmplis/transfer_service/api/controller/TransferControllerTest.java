@@ -122,10 +122,12 @@ public class TransferControllerTest {
                                         )
                                 )
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(
-                        jsonPath("$.transferId")
-                                .value(transferId.toString())
+                        header().string(
+                                "Location",
+                                TRANSFERS_URL + "/" + transferId
+                        )
                 )
                 .andExpect(
                         jsonPath("$.state")
@@ -452,9 +454,9 @@ public class TransferControllerTest {
                                 )
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
-                                    {
-                                      "fromAccountId":
-                                    """)
+                                        {
+                                          "fromAccountId":
+                                        """)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(

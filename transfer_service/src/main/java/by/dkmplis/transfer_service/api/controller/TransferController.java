@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -42,7 +43,17 @@ public class TransferController {
         TransferResponse response =
                 transferApiMapper.toResponse(result);
 
-        return ResponseEntity.ok(response);
+        if (response.replayed()) {
+            return ResponseEntity.ok(response);
+        }
+
+        URI location = URI.create(
+                "/api/v1/transfers/" + result.transferId()
+        );
+
+        return ResponseEntity
+                .created(location)
+                .body(response);
     }
 
     @GetMapping("/{transferId}")
