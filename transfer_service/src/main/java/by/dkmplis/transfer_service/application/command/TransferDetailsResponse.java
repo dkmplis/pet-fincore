@@ -1,4 +1,4 @@
-package by.dkmplis.transfer_service.api.dto;
+package by.dkmplis.transfer_service.application.command;
 
 import by.dkmplis.transfer_service.domain.enums.TransferState;
 

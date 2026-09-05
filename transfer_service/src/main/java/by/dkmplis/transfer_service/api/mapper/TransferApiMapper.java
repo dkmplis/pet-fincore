@@ -1,7 +1,7 @@
 package by.dkmplis.transfer_service.api.mapper;
 
 import by.dkmplis.transfer_service.api.dto.CreateTransferRequest;
-import by.dkmplis.transfer_service.api.dto.TransferDetailsResponse;
+import by.dkmplis.transfer_service.application.command.TransferDetailsResponse;
 import by.dkmplis.transfer_service.api.dto.TransferDetailsResult;
 import by.dkmplis.transfer_service.api.dto.TransferResponse;
 import by.dkmplis.transfer_service.application.command.CreateTransferCommand;
