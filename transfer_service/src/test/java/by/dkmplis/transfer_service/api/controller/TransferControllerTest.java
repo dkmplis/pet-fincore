@@ -122,10 +122,12 @@ public class TransferControllerTest {
                                         )
                                 )
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(
-                        jsonPath("$.transferId")
-                                .value(transferId.toString())
+                        header().string(
+                                "Location",
+                                TRANSFERS_URL + "/" + transferId
+                        )
                 )
                 .andExpect(
                         jsonPath("$.state")
@@ -452,9 +454,9 @@ public class TransferControllerTest {
                                 )
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("""
-                                    {
-                                      "fromAccountId":
-                                    """)
+                                        {
+                                          "fromAccountId":
+                                        """)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(
@@ -494,6 +496,85 @@ public class TransferControllerTest {
                 );
 
         verifyNoInteractions(transferService);
+    }
+
+    @Test
+    void shouldReturnOkForIdempotentReplay()
+            throws Exception {
+
+        UUID externalOperationId = UUID.randomUUID();
+        UUID transferId = UUID.randomUUID();
+        UUID fromAccountId = UUID.randomUUID();
+        UUID toAccountId = UUID.randomUUID();
+
+        CreateTransferRequest request =
+                new CreateTransferRequest(
+                        fromAccountId,
+                        toAccountId,
+                        CURRENCY,
+                        AMOUNT_MINOR
+                );
+
+        CreateTransferCommand command =
+                new CreateTransferCommand(
+                        externalOperationId,
+                        fromAccountId,
+                        toAccountId,
+                        CURRENCY,
+                        AMOUNT_MINOR
+                );
+
+        CreateTransferResult result =
+                new CreateTransferResult(
+                        transferId,
+                        TransferState.COMPLETED,
+                        true
+                );
+
+        TransferResponse response =
+                new TransferResponse(
+                        transferId,
+                        TransferState.COMPLETED,
+                        true
+                );
+
+        when(transferApiMapper.toCommand(
+                any(CreateTransferRequest.class),
+                eq(externalOperationId)
+        )).thenReturn(command);
+
+        when(createTransferUseCase.execute(command))
+                .thenReturn(result);
+
+        when(transferApiMapper.toResponse(result))
+                .thenReturn(response);
+
+        mockMvc.perform(
+                        post(TRANSFERS_URL)
+                                .header(
+                                        IDEMPOTENCY_KEY_HEADER,
+                                        externalOperationId
+                                )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        objectMapper.writeValueAsString(
+                                                request
+                                        )
+                                )
+                )
+                .andExpect(status().isOk())
+                .andExpect(
+                        jsonPath("$.transferId")
+                                .value(transferId.toString())
+                )
+                .andExpect(
+                        jsonPath("$.state")
+                                .value("COMPLETED")
+                )
+                .andExpect(
+                        jsonPath("$.replayed")
+                                .value(true)
+                );
     }
 
 
