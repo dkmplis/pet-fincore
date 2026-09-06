@@ -1,3 +1,5 @@
 databaseChangeLog:
   - include:
       file: db/changelog/sql/001__transfers.sql
+  - include:
+      file: db/changelog/sql/002_outbox_events.sql

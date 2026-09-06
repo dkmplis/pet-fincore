@@ -3,8 +3,11 @@ package by.dkmplis.transfer_service.application.service;
 import by.dkmplis.transfer_service.api.dto.TransferDetailsResult;
 import by.dkmplis.transfer_service.application.command.CreateTransferCommand;
 import by.dkmplis.transfer_service.application.command.CreateTransferResult;
+import by.dkmplis.transfer_service.application.event.TransferCreatedEvent;
+import by.dkmplis.transfer_service.application.event.TransferCreatedPayload;
 import by.dkmplis.transfer_service.application.exception.TransferIdempotencyConflictException;
 import by.dkmplis.transfer_service.application.exception.TransferNotFoundException;
+import by.dkmplis.transfer_service.application.port.IntegrationEventPublisher;
 import by.dkmplis.transfer_service.domain.model.Transfer;
 import by.dkmplis.transfer_service.infrastructure.persistence.TransferOperationLockRepository;
 import by.dkmplis.transfer_service.infrastructure.persistence.TransferRepository;
@@ -12,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,6 +26,7 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransferRequestFingerprintCalculator fingerprintCalculator;
     private final TransferOperationLockRepository operationLockRepository;
+    private final IntegrationEventPublisher eventPublisher;
 
     @Transactional
     public CreateTransferResult create(CreateTransferCommand command) {
@@ -52,6 +57,20 @@ public class TransferService {
         );
 
         Transfer savedTransfer = transferRepository.save(transfer);
+
+        eventPublisher.publish(
+                new TransferCreatedEvent(
+                        UUID.randomUUID(),
+                        savedTransfer.getId(),
+                        Instant.now(),
+                        new TransferCreatedPayload(
+                                savedTransfer.getFromAccountId(),
+                                savedTransfer.getToAccountId(),
+                                savedTransfer.getCurrency(),
+                                savedTransfer.getAmountMinor()
+                        )
+                )
+        );
 
         return new CreateTransferResult(
                 savedTransfer.getId(),
