@@ -1,4 +1,4 @@
-package by.dkmplis.transfer_service.infrastructure.outbox;
+package by.dkmplis.transfer_service.infrastructure.outbox.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -72,6 +72,12 @@ public class OutboxEvent {
     @Column(name = "last_error")
     private String lastError;
 
+    @Column(name = "claimed_at")
+    private Instant claimedAt;
+
+    @Column(name = "claim_token")
+    private UUID claimToken;
+
     public OutboxEvent(
             UUID id,
             String aggregateType,
@@ -93,12 +99,18 @@ public class OutboxEvent {
         this.attempts = 0;
     }
 
-    public void markPublished() {
-        this.publishedAt = Instant.now();
-    }
+    public void claim(
+            UUID claimToken,
+            Instant claimedAt
+    ) {
+        if (publishedAt != null) {
+            throw new IllegalStateException(
+                    "Published outbox event cannot be claimed"
+            );
+        }
 
-    public void markFailed(String error) {
+        this.claimToken = claimToken;
+        this.claimedAt = claimedAt;
         this.attempts++;
-        this.lastError = error;
     }
 }

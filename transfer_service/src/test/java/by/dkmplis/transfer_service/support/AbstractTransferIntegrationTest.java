@@ -1,5 +1,6 @@
 package by.dkmplis.transfer_service.support;
 
+import by.dkmplis.transfer_service.infrastructure.outbox.persistence.OutboxEventRepository;
 import by.dkmplis.transfer_service.infrastructure.persistence.TransferRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,9 @@ public class AbstractTransferIntegrationTest {
 
     @Autowired
     protected TransferRepository transferRepository;
+
+    @Autowired
+    protected OutboxEventRepository outboxEventRepository;
 
     @BeforeEach
     void cleanDatabase() {

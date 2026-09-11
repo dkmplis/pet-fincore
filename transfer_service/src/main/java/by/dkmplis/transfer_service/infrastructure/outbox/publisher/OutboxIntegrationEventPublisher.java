@@ -1,8 +1,10 @@
-package by.dkmplis.transfer_service.infrastructure.outbox;
+package by.dkmplis.transfer_service.infrastructure.outbox.publisher;
 
 import by.dkmplis.transfer_service.application.event.EventEnvelope;
 import by.dkmplis.transfer_service.application.event.IntegrationEvent;
 import by.dkmplis.transfer_service.application.port.IntegrationEventPublisher;
+import by.dkmplis.transfer_service.infrastructure.outbox.persistence.OutboxEvent;
+import by.dkmplis.transfer_service.infrastructure.outbox.persistence.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;

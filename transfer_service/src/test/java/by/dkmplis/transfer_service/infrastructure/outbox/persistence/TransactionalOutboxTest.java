@@ -1,4 +1,4 @@
-package by.dkmplis.transfer_service.infrastructure.outbox;
+package by.dkmplis.transfer_service.infrastructure.outbox.persistence;
 
 import by.dkmplis.transfer_service.application.command.CreateTransferCommand;
 import by.dkmplis.transfer_service.application.command.CreateTransferResult;
@@ -21,9 +21,6 @@ public class TransactionalOutboxTest
 
     @Autowired
     private TransferStateService transferStateService;
-
-    @Autowired
-    private OutboxEventRepository outboxEventRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
