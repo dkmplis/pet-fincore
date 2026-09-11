@@ -17,6 +17,16 @@ spring:
   liquibase:
     enabled: true
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+      properties:
+        acks: all
+
 server:
   port: 8082
 
@@ -33,3 +43,11 @@ clients:
     base-url : ${LEDGER_BASE_URL:http://localhost:8081}
     connect-timeout: 2s
     read-timeout: 5s
+
+outbox:
+  publisher:
+    enabled: true
+    batch-size: 10
+    claim-timeout: 1m
+    send-timeout: 5s
+    fixed-delay-ms: 1000
