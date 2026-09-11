@@ -47,7 +47,7 @@ clients:
 outbox:
   publisher:
     enabled: true
-    batch-size: 100
+    batch-size: 10
     claim-timeout: 1m
     send-timeout: 5s
     fixed-delay-ms: 1000
