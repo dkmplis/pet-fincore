@@ -24,7 +24,7 @@ public class TransferEventsKafkaListener {
     private final ObjectMapper objectMapper;
     private final TransferCreatedEventProcessor createdEventProcessor;
 
-    @KafkaListener(topics = "transfer.events.v1")
+    @KafkaListener(topics = "transfers.events.v1")
     public void consume(String json) {
         RawEventEnvelope raw = deserializeEnvelope(json);
 
