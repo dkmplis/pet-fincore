@@ -11,7 +11,7 @@ public class KafkaTopicConfiguration {
     @Bean
     public NewTopic transferEventsTopic() {
         return TopicBuilder
-                .name("transfer.events.v1")
+                .name("transfers.events.v1")
                 .partitions(3)
                 .replicas(1)
                 .build();
