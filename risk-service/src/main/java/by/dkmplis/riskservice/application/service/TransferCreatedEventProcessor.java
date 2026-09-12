@@ -21,14 +21,14 @@ public class TransferCreatedEventProcessor {
     @Transactional
     public void process(
             EventEnvelope<TransferCreatedPayload> event,
-            String rawPayload
+            String rawEventJson
     ) {
         int registered = inboxEventRepository.register(
                 event.eventId(),
                 event.eventType(),
                 event.eventVersion(),
                 event.aggregateId(),
-                rawPayload
+                rawEventJson
         );
 
         if (registered == 0) {
