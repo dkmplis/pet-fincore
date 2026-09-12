@@ -1,4 +1,4 @@
-package by.dkmplis.riskservice.kafka.dto.listener;
+package by.dkmplis.riskservice.kafka.listener;
 
 import by.dkmplis.riskservice.application.service.TransferCreatedEventProcessor;
 import by.dkmplis.riskservice.kafka.dto.EventEnvelope;
