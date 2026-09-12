@@ -37,6 +37,25 @@ services:
       timeout: 3s
       retries: 10
 
+  risk-db:
+    image: postgres:17
+    container_name: fincore-risk-db
+
+    environment:
+      POSTGRES_DB: risk
+      POSTGRES_USER: risk
+      POSTGRES_PASSWORD: risk
+
+    ports:
+      - "5434:5432"
+    volumes:
+      - risk-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U transfer -d transfer" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   kafka:
     image: apache/kafka:4.1.0
     container_name: fincore-kafka
@@ -76,3 +95,4 @@ services:
 volumes:
   ledger-db-data:
   transfer-db-data:
+  risk-db-data:
