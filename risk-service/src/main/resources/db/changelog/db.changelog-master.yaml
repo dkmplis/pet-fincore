@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/sql/001__inbox_events.sql
   - include:
       file: db/changelog/sql/002__risk_assessments.sql
+  - include:
+      file: db/changelog/sql/003_risk_assessments_add_decision.sql

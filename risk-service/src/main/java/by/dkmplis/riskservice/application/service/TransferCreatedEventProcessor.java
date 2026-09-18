@@ -1,6 +1,7 @@
 package by.dkmplis.riskservice.application.service;
 
 import by.dkmplis.riskservice.domain.model.RiskAssessment;
+import by.dkmplis.riskservice.domain.policy.RiskDecision;
 import by.dkmplis.riskservice.infrastructure.persistence.RiskAssessmentRepository;
 import by.dkmplis.riskservice.infrastructure.inbox.persistence.InboxEventRepository;
 import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
@@ -15,8 +16,10 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class TransferCreatedEventProcessor {
+
     private final RiskAssessmentRepository riskAssessmentRepository;
     private final InboxEventRepository inboxEventRepository;
+    private final RiskDecisionService riskDecisionService;
 
     @Transactional
     public void process(
@@ -46,7 +49,9 @@ public class TransferCreatedEventProcessor {
                 payload.amountMinor()
         );
 
-        riskAssessmentRepository.save(assessment);
+        riskAssessmentRepository.saveAndFlush(assessment);
+
+        riskDecisionService.decide(assessment.getId());
 
         int processed = inboxEventRepository.markProcessed(
                 event.eventId(),
