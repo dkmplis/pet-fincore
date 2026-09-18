@@ -42,6 +42,15 @@ public class RiskAssessment {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(
+            name = "decision_reason",
+            length = 256
+    )
+    private String decisionReason;
+
+    @Column(name = "decided_at")
+    private Instant decidedAt;
+
     public RiskAssessment(
             UUID id,
             UUID transferId,
@@ -73,5 +82,38 @@ public class RiskAssessment {
         Instant now = Instant.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    public void approve(
+            String reason,
+            Instant decidedAt
+    ) {
+        ensurePending();
+
+        this.status = RiskStatus.APPROVED;
+        this.decisionReason = reason;
+        this.decidedAt = decidedAt;
+        this.updatedAt = decidedAt;
+    }
+
+    public void reject(
+            String reason,
+            Instant decidedAt
+    ) {
+        ensurePending();
+
+        this.status = RiskStatus.REJECTED;
+
+        this.decisionReason = reason;
+        this.decidedAt = decidedAt;
+        this.updatedAt = decidedAt;
+    }
+
+    private void ensurePending() {
+        if (status != RiskStatus.PENDING) {
+            throw new IllegalStateException(
+                    "Risk assessment is already decided"
+            );
+        }
     }
 }

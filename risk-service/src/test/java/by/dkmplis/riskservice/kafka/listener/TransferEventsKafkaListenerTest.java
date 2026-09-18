@@ -1,8 +1,9 @@
 package by.dkmplis.riskservice.kafka.listener;
 
 import by.dkmplis.riskservice.application.service.TransferCreatedEventProcessor;
-import by.dkmplis.riskservice.kafka.dto.EventEnvelope;
-import by.dkmplis.riskservice.kafka.dto.TransferCreatedPayload;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.TransferCreatedPayload;
+import by.dkmplis.riskservice.infrastructure.kafka.listener.TransferEventsKafkaListener;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

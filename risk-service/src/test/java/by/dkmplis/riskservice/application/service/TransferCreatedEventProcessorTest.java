@@ -1,10 +1,10 @@
 package by.dkmplis.riskservice.application.service;
 
 import by.dkmplis.riskservice.domain.enums.RiskStatus;
-import by.dkmplis.riskservice.domain.repository.RiskAssessmentRepository;
+import by.dkmplis.riskservice.infrastructure.persistence.RiskAssessmentRepository;
 import by.dkmplis.riskservice.infrastructure.inbox.persistence.InboxEventRepository;
-import by.dkmplis.riskservice.kafka.dto.EventEnvelope;
-import by.dkmplis.riskservice.kafka.dto.TransferCreatedPayload;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.TransferCreatedPayload;
 import by.dkmplis.riskservice.support.AbstractRiskIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,9 +1,9 @@
-package by.dkmplis.riskservice.kafka.listener;
+package by.dkmplis.riskservice.infrastructure.kafka.listener;
 
 import by.dkmplis.riskservice.application.service.TransferCreatedEventProcessor;
-import by.dkmplis.riskservice.kafka.dto.EventEnvelope;
-import by.dkmplis.riskservice.kafka.dto.RawEventEnvelope;
-import by.dkmplis.riskservice.kafka.dto.TransferCreatedPayload;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.RawEventEnvelope;
+import by.dkmplis.riskservice.infrastructure.kafka.dto.TransferCreatedPayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;

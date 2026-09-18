@@ -1,16 +1,14 @@
-package by.dkmplis.riskservice.kafka.dto;
-
-import tools.jackson.databind.JsonNode;
+package by.dkmplis.riskservice.infrastructure.kafka.dto;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record RawEventEnvelope(
+public record EventEnvelope<T>(
         UUID eventId,
         String eventType,
         int eventVersion,
         UUID aggregateId,
         Instant occurredAt,
-        JsonNode payload
+        T payload
 ) {
 }

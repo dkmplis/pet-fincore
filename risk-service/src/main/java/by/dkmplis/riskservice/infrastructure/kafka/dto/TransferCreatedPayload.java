@@ -1,4 +1,4 @@
-package by.dkmplis.riskservice.kafka.dto;
+package by.dkmplis.riskservice.infrastructure.kafka.dto;
 
 import java.util.UUID;
 
