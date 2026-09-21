@@ -1,6 +1,11 @@
 package by.dkmplis.riskservice.application.service;
 
+import by.dkmplis.riskservice.application.event.IntegrationEvent;
+import by.dkmplis.riskservice.application.event.RiskApprovedEvent;
+import by.dkmplis.riskservice.application.event.RiskDecisionPayload;
+import by.dkmplis.riskservice.application.event.RiskRejectedEvent;
 import by.dkmplis.riskservice.application.policy.RiskPolicyEngine;
+import by.dkmplis.riskservice.application.port.IntegrationEventPublisher;
 import by.dkmplis.riskservice.domain.enums.RiskStatus;
 import by.dkmplis.riskservice.domain.model.RiskAssessment;
 import by.dkmplis.riskservice.domain.policy.RiskDecision;
@@ -19,6 +24,7 @@ public class RiskDecisionService {
 
     private final RiskAssessmentRepository assessmentRepository;
     private final RiskPolicyEngine policyEngine;
+    private final IntegrationEventPublisher integrationEventPublisher;
 
     @Transactional
     public RiskStatus decide(
@@ -66,6 +72,36 @@ public class RiskDecisionService {
                             "Risk policy cannot return PENDING"
                     );
         }
+
+        RiskDecisionPayload payload = new RiskDecisionPayload(
+                assessment.getId(),
+                decision.reason()
+        );
+
+        IntegrationEvent<RiskDecisionPayload> event =
+                switch (decision.status()) {
+                    case APPROVED ->
+                            new RiskApprovedEvent(
+                                    UUID.randomUUID(),
+                                    assessment.getTransferId(),
+                                    now,
+                                    payload
+                            );
+
+                    case REJECTED ->
+                            new RiskRejectedEvent(
+                                    UUID.randomUUID(),
+                                    assessment.getTransferId(),
+                                    now,
+                                    payload
+                            );
+
+                    case PENDING -> throw new IllegalStateException(
+                            "Risk policy cannot return PENDING"
+                    );
+                };
+
+        integrationEventPublisher.publish(event);
 
         return assessment.getStatus();
     }

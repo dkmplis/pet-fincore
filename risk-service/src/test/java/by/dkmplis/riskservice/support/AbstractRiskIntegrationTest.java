@@ -16,6 +16,7 @@ public class AbstractRiskIntegrationTest {
     void cleanDatabase() {
         jdbcTemplate.execute("""
                 TRUNCATE TABLE
+                    outbox_events,
                     risk_assessments,
                     inbox_events
                 CASCADE

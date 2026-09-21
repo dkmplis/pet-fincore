@@ -1,10 +1,9 @@
 package by.dkmplis.riskservice.application.service;
 
 import by.dkmplis.riskservice.domain.model.RiskAssessment;
-import by.dkmplis.riskservice.domain.policy.RiskDecision;
 import by.dkmplis.riskservice.infrastructure.persistence.RiskAssessmentRepository;
 import by.dkmplis.riskservice.infrastructure.inbox.persistence.InboxEventRepository;
-import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
+import by.dkmplis.riskservice.application.event.EventEnvelope;
 import by.dkmplis.riskservice.infrastructure.kafka.dto.TransferCreatedPayload;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

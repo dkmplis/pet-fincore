@@ -1,7 +1,7 @@
 package by.dkmplis.riskservice.infrastructure.kafka.listener;
 
 import by.dkmplis.riskservice.application.service.TransferCreatedEventProcessor;
-import by.dkmplis.riskservice.infrastructure.kafka.dto.EventEnvelope;
+import by.dkmplis.riskservice.application.event.EventEnvelope;
 import by.dkmplis.riskservice.infrastructure.kafka.dto.RawEventEnvelope;
 import by.dkmplis.riskservice.infrastructure.kafka.dto.TransferCreatedPayload;
 import lombok.RequiredArgsConstructor;

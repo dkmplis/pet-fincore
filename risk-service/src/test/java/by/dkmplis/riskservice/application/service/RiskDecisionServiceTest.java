@@ -1,6 +1,9 @@
 package by.dkmplis.riskservice.application.service;
 
+import by.dkmplis.riskservice.application.event.RiskApprovedEvent;
+import by.dkmplis.riskservice.application.event.RiskRejectedEvent;
 import by.dkmplis.riskservice.application.policy.RiskPolicyEngine;
+import by.dkmplis.riskservice.application.port.IntegrationEventPublisher;
 import by.dkmplis.riskservice.domain.enums.RiskStatus;
 import by.dkmplis.riskservice.domain.model.RiskAssessment;
 import by.dkmplis.riskservice.domain.policy.RiskDecision;
@@ -8,6 +11,7 @@ import by.dkmplis.riskservice.infrastructure.persistence.RiskAssessmentRepositor
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +24,7 @@ class RiskDecisionServiceTest {
 
     private RiskAssessmentRepository repository;
     private RiskPolicyEngine policyEngine;
-
+    private IntegrationEventPublisher integrationEventPublisher;
     private RiskDecisionService service;
 
     @BeforeEach
@@ -35,10 +39,16 @@ class RiskDecisionServiceTest {
                         RiskPolicyEngine.class
                 );
 
+        integrationEventPublisher =
+                mock(
+                        IntegrationEventPublisher.class
+                );
+
         service =
                 new RiskDecisionService(
                         repository,
-                        policyEngine
+                        policyEngine,
+                        integrationEventPublisher
                 );
     }
 
@@ -77,17 +87,46 @@ class RiskDecisionServiceTest {
                         RiskStatus.APPROVED
                 );
 
-        assertThat(assessment.getDecisionReason())
-                .isEqualTo(
-                        "RISK_CHECK_PASSED"
+        ArgumentCaptor<RiskApprovedEvent> captor =
+                ArgumentCaptor.forClass(
+                        RiskApprovedEvent.class
                 );
 
-        assertThat(assessment.getDecidedAt())
+        verify(integrationEventPublisher)
+                .publish(
+                        captor.capture()
+                );
+
+        RiskApprovedEvent event =
+                captor.getValue();
+
+        assertThat(event.eventId())
                 .isNotNull();
 
-        assertThat(assessment.getUpdatedAt())
+        assertThat(event.aggregateId())
+                .isEqualTo(
+                        assessment.getTransferId()
+                );
+
+        assertThat(event.occurredAt())
                 .isEqualTo(
                         assessment.getDecidedAt()
+                );
+
+        assertThat(event.eventType())
+                .isEqualTo("risk.approved");
+
+        assertThat(event.eventVersion())
+                .isEqualTo(1);
+
+        assertThat(event.payload().riskAssessmentId())
+                .isEqualTo(
+                        assessment.getId()
+                );
+
+        assertThat(event.payload().reason())
+                .isEqualTo(
+                        "RISK_CHECK_PASSED"
                 );
     }
 
@@ -126,13 +165,39 @@ class RiskDecisionServiceTest {
                         RiskStatus.REJECTED
                 );
 
-        assertThat(assessment.getDecisionReason())
+        ArgumentCaptor<RiskRejectedEvent> captor =
+                ArgumentCaptor.forClass(
+                        RiskRejectedEvent.class
+                );
+
+        verify(integrationEventPublisher)
+                .publish(
+                        captor.capture()
+                );
+
+        RiskRejectedEvent event =
+                captor.getValue();
+
+        assertThat(event.aggregateId())
+                .isEqualTo(
+                        assessment.getTransferId()
+                );
+
+        assertThat(event.eventType())
+                .isEqualTo("risk.rejected");
+
+        assertThat(event.eventVersion())
+                .isEqualTo(1);
+
+        assertThat(event.payload().riskAssessmentId())
+                .isEqualTo(
+                        assessment.getId()
+                );
+
+        assertThat(event.payload().reason())
                 .isEqualTo(
                         "TRANSFER_AMOUNT_EXCEEDS_LIMIT"
                 );
-
-        assertThat(assessment.getDecidedAt())
-                .isNotNull();
     }
 
     @Test
@@ -163,7 +228,8 @@ class RiskDecisionServiceTest {
                 );
 
         verifyNoInteractions(
-                policyEngine
+                policyEngine,
+                integrationEventPublisher
         );
     }
 
@@ -192,7 +258,8 @@ class RiskDecisionServiceTest {
                 );
 
         verifyNoInteractions(
-                policyEngine
+                policyEngine,
+                integrationEventPublisher
         );
     }
 
