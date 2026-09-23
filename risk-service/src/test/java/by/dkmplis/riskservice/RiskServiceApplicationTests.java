@@ -4,7 +4,12 @@ import by.dkmplis.riskservice.support.AbstractRiskIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "outbox.publisher.enabled=false",
+                "spring.kafka.listener.auto-startup=false"
+        }
+)
 class RiskServiceApplicationTests extends AbstractRiskIntegrationTest {
 
     @Test

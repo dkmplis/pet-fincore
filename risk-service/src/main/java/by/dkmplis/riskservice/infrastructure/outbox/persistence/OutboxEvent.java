@@ -110,4 +110,19 @@ public class OutboxEvent {
         this.createdAt = createdAt;
         this.attempts = 0;
     }
+
+    public void claim(
+        UUID claimToken,
+        Instant claimedAt
+    ) {
+        if (publishedAt != null) {
+            throw new IllegalStateException(
+                    "Published outbox event cannot be claimed"
+            );
+        }
+
+        this.claimToken = claimToken;
+        this.claimedAt = claimedAt;
+        this.attempts++;
+    }
 }

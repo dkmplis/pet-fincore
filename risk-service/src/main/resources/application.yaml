@@ -30,6 +30,13 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
 
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        acks: all
+        max.block.ms: 5000
+
     listener:
       ack-mode: record
 
@@ -39,3 +46,11 @@ server:
 risk:
   policy:
     max-transfer-amount-minor: 500000
+
+outbox:
+  publisher:
+    enabled: true
+    batch-size: 10
+    claim-timeout: 3m
+    send-timeout: 5s
+    fixed-delay-ms: 1000
