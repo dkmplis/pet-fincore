@@ -116,5 +116,16 @@ public class Transfer {
         this.updatedAt = Instant.now();
     }
 
+    public void approveRisk() {
+        if (this.state != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Only pending transfer can be risk approved"
+            );
+        }
+
+        this.state = TransferState.RISK_APPROVED;
+        this.updatedAt = Instant.now();
+    }
+
 
 }

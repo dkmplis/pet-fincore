@@ -88,4 +88,29 @@ public class TransferStateService {
 
         return transfer.getState();
     }
+
+    @Transactional
+    public TransferState markRiskApproved(
+            UUID transferId
+    ) {
+        Transfer transfer = transferRepository
+                .findByIdForUpdate(transferId)
+                .orElseThrow(
+                        () -> new TransferNotFoundException(transferId)
+                );
+
+        if (transfer.getState() == TransferState.RISK_APPROVED) {
+            return TransferState.RISK_APPROVED;
+        }
+
+        if (transfer.getState() != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Only pending transfer can be risk approved"
+            );
+        }
+
+        transfer.approveRisk();
+
+        return transfer.getState();
+    }
 }
