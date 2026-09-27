@@ -1,0 +1,73 @@
+package by.dkmplis.transfer_service.infrastructure.inbox.service;
+
+import by.dkmplis.transfer_service.application.event.EventEnvelope;
+import by.dkmplis.transfer_service.infrastructure.inbox.persistence.InboxEvent;
+import by.dkmplis.transfer_service.infrastructure.inbox.persistence.InboxEventRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class InboxEventService {
+
+    private final InboxEventRepository inboxEventRepository;
+
+    @Transactional
+    public InboxRegistration register(
+            EventEnvelope<?> event,
+            String rawEventJson
+    ) {
+        int registered = inboxEventRepository.register(
+                event.eventId(),
+                event.eventType(),
+                event.eventVersion(),
+                event.aggregateId(),
+                rawEventJson
+        );
+
+        InboxEvent inboxEvent = inboxEventRepository
+                .findById(event.eventId())
+                .orElseThrow(
+                        () -> new IllegalStateException(
+                                "Inbox event was not registered"
+                        )
+                );
+
+        return new InboxRegistration(
+                registered == 1,
+                inboxEvent.getProcessedAt() != null
+        );
+    }
+
+    @Transactional
+    public void markProcessed(UUID eventId) {
+        int updated = inboxEventRepository.markProcessed(
+                eventId,
+                Instant.now()
+        );
+
+        if (updated == 1) {
+            return;
+        }
+
+        InboxEvent existing = inboxEventRepository
+                .findById(eventId)
+                .orElseThrow(
+                        () -> new IllegalStateException(
+                                "Inbox event not found: " + eventId
+                        )
+                );
+
+        if (existing.getProcessedAt() != null) {
+            return;
+        }
+
+        throw new IllegalStateException(
+                "Failed to mark inbox event as processed"
+        );
+    }
+}
