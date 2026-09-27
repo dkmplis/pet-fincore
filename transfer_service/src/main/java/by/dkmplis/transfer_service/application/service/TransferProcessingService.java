@@ -22,13 +22,14 @@ public class TransferProcessingService {
     private final TransferStateService stateService;
 
     public TransferState process(UUID transferId) {
+
         Transfer transfer = transferRepository
                 .findById(transferId)
                 .orElseThrow(
                         () -> new TransferNotFoundException(transferId)
                 );
 
-        if (transfer.getState() != TransferState.PENDING) {
+        if (transfer.getState() != TransferState.RISK_APPROVED) {
             return transfer.getState();
         }
 

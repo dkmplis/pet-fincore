@@ -93,6 +93,10 @@ public class TransactionalOutboxTest
         CreateTransferResult created =
                 transferService.create(command());
 
+        transferStateService.markRiskApproved(
+                created.transferId()
+        );
+
         UUID ledgerTransactionId =
                 UUID.randomUUID();
 
@@ -135,8 +139,7 @@ public class TransactionalOutboxTest
     }
 
     @Test
-    void shouldPersistStableTransferCreatedEventEnvelope()
-            throws Exception {
+    void shouldPersistStableTransferCreatedEventEnvelope() {
 
         CreateTransferCommand command =
                 command();

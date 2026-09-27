@@ -37,9 +37,10 @@ public class TransferStateService {
         if (transfer.getState() == TransferState.COMPLETED) {
             return TransferState.COMPLETED;
         }
-        if (transfer.getState() == TransferState.REJECTED) {
+
+        if (transfer.getState() != TransferState.RISK_APPROVED) {
             throw new IllegalStateException(
-                    "Only pending transfer can be completed"
+                    "Only risk approved transfer can be completed"
             );
         }
 
