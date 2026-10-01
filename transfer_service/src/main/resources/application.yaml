@@ -33,6 +33,7 @@ spring:
 
       properties:
         acks: all
+        max.block.ms: 5000
     listener:
       ack-mode: record
 
@@ -57,6 +58,6 @@ outbox:
   publisher:
     enabled: true
     batch-size: 10
-    claim-timeout: 1m
+    claim-timeout: 3m
     send-timeout: 5s
     fixed-delay-ms: 1000
