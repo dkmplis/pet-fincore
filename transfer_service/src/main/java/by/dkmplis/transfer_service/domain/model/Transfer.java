@@ -92,9 +92,9 @@ public class Transfer {
     }
 
     public void complete(UUID ledgerTransactionId) {
-        if (state != TransferState.PENDING) {
+        if (state != TransferState.RISK_APPROVED) {
             throw new IllegalStateException(
-                    "Only pending transfer can be completed"
+                    "Only risk approved transfer can be completed"
             );
         }
 
@@ -106,13 +106,27 @@ public class Transfer {
     }
 
     public void reject() {
-        if (state != TransferState.PENDING) {
+        if (
+                state != TransferState.PENDING
+                        && state != TransferState.RISK_APPROVED
+        ) {
             throw new IllegalStateException(
-                    "Only pending transfer can be rejected"
+                    "Only pending or risk approved transfer can be rejected"
             );
         }
 
         this.state = TransferState.REJECTED;
+        this.updatedAt = Instant.now();
+    }
+
+    public void approveRisk() {
+        if (this.state != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Only pending transfer can be risk approved"
+            );
+        }
+
+        this.state = TransferState.RISK_APPROVED;
         this.updatedAt = Instant.now();
     }
 

@@ -6,11 +6,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 import java.util.concurrent.*;
 
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "outbox.publisher.enabled=false",
+                "spring.kafka.listener.auto-startup=false"
+        }
+)
 @Import(TransferTestcontainersConfiguration.class)
 public class AbstractTransferIntegrationTest {
 
@@ -20,9 +26,18 @@ public class AbstractTransferIntegrationTest {
     @Autowired
     protected OutboxEventRepository outboxEventRepository;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void cleanDatabase() {
-        transferRepository.deleteAll();
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    inbox_events,
+                    outbox_events,
+                    transfers
+                CASCADE
+                """);
     }
 
     protected <T> List<T> runConcurrently(

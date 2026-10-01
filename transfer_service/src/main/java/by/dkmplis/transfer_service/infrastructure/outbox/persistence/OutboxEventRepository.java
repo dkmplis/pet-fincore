@@ -19,7 +19,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, UUID> 
                   claimed_at IS NULL
                   OR claimed_at < :claimBefore
               )
-            ORDER BY created_at
+            ORDER BY created_at, id
             LIMIT :limit
             FOR UPDATE SKIP LOCKED
             """,

@@ -37,9 +37,10 @@ public class TransferStateService {
         if (transfer.getState() == TransferState.COMPLETED) {
             return TransferState.COMPLETED;
         }
-        if (transfer.getState() == TransferState.REJECTED) {
+
+        if (transfer.getState() != TransferState.RISK_APPROVED) {
             throw new IllegalStateException(
-                    "Only pending transfer can be completed"
+                    "Only risk approved transfer can be completed"
             );
         }
 
@@ -72,6 +73,68 @@ public class TransferStateService {
         if (transfer.getState() == TransferState.COMPLETED) {
             throw new IllegalStateException(
                     "Only pending transfer can be rejected"
+            );
+        }
+
+        transfer.reject();
+
+        eventPublisher.publish(
+                new TransferRejectedEvent(
+                        UUID.randomUUID(),
+                        transfer.getId(),
+                        Instant.now(),
+                        new TransferRejectedPayload()
+                )
+        );
+
+        return transfer.getState();
+    }
+
+    @Transactional
+    public TransferState markRiskApproved(
+            UUID transferId
+    ) {
+        Transfer transfer = transferRepository
+                .findByIdForUpdate(transferId)
+                .orElseThrow(
+                        () -> new TransferNotFoundException(transferId)
+                );
+
+        if (transfer.getState() == TransferState.RISK_APPROVED) {
+            return TransferState.RISK_APPROVED;
+        }
+
+        if (transfer.getState() != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Only pending transfer can be risk approved"
+            );
+        }
+
+        transfer.approveRisk();
+
+        return transfer.getState();
+    }
+
+    @Transactional
+    public TransferState markRiskRejected(
+            UUID transferId
+    ) {
+        Transfer transfer = transferRepository
+                .findByIdForUpdate(transferId)
+                .orElseThrow(
+                        () -> new TransferNotFoundException(
+                                transferId
+                        )
+                );
+
+        if (transfer.getState() == TransferState.REJECTED) {
+            return TransferState.REJECTED;
+        }
+
+        if (transfer.getState() != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Risk rejection can only be applied "
+                            + "to pending transfer"
             );
         }
 

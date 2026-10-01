@@ -20,12 +20,22 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
+    consumer:
+      group-id: transfer-service
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
       properties:
         acks: all
+        max.block.ms: 5000
+    listener:
+      ack-mode: record
 
 server:
   port: 8082
@@ -48,6 +58,6 @@ outbox:
   publisher:
     enabled: true
     batch-size: 10
-    claim-timeout: 1m
+    claim-timeout: 3m
     send-timeout: 5s
     fixed-delay-ms: 1000

@@ -5,3 +5,7 @@ databaseChangeLog:
       file: db/changelog/sql/002_outbox_events.sql
   - include:
       file: db/changelog/sql/003_outbox_claim.sql
+  - include:
+      file: db/changelog/sql/004__transfers_risk_approved_state.sql
+  - include:
+      file: db/changelog/sql/005__indox_events.sql
