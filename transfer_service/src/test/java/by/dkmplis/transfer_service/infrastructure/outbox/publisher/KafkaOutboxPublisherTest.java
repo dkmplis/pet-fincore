@@ -12,7 +12,10 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 
 class KafkaOutboxPublisherTest {
@@ -165,6 +168,190 @@ class KafkaOutboxPublisherTest {
         verifyNoInteractions(
                 kafkaTemplate,
                 stateService
+        );
+    }
+
+    @Test
+    void shouldMarkFailedWhenKafkaSendTimesOut()
+            throws Exception {
+
+        ClaimedOutboxEvent event =
+                event();
+
+        when(
+                claimService.claimBatch(
+                        100,
+                        Duration.ofMinutes(1)
+                )
+        ).thenReturn(
+                List.of(event)
+        );
+
+        CompletableFuture<SendResult<String, String>>
+                future =
+                mock(CompletableFuture.class);
+
+        when(
+                future.get(
+                        5000L,
+                        TimeUnit.MILLISECONDS
+                )
+        ).thenThrow(
+                new TimeoutException()
+        );
+
+        when(
+                kafkaTemplate.send(
+                        event.topic(),
+                        event.key(),
+                        event.payload()
+                )
+        ).thenReturn(future);
+
+        publisher.publishBatch();
+
+        verify(stateService)
+                .markFailed(
+                        event.id(),
+                        event.claimToken(),
+                        "Kafka publishing timed out"
+                );
+
+        verify(
+                stateService,
+                never()
+        ).markPublished(
+                event.id(),
+                event.claimToken()
+        );
+    }
+
+    @Test
+    void shouldRestoreInterruptAndStopCurrentBatch()
+            throws Exception {
+
+        ClaimedOutboxEvent first =
+                event();
+
+        ClaimedOutboxEvent second =
+                event();
+
+        when(
+                claimService.claimBatch(
+                        100,
+                        Duration.ofMinutes(1)
+                )
+        ).thenReturn(
+                List.of(
+                        first,
+                        second
+                )
+        );
+
+        CompletableFuture<SendResult<String, String>>
+                future =
+                mock(CompletableFuture.class);
+
+        when(
+                future.get(
+                        5000L,
+                        TimeUnit.MILLISECONDS
+                )
+        ).thenThrow(
+                new InterruptedException()
+        );
+
+        when(
+                kafkaTemplate.send(
+                        first.topic(),
+                        first.key(),
+                        first.payload()
+                )
+        ).thenReturn(future);
+
+        try {
+            publisher.publishBatch();
+
+            assertThat(
+                    Thread.currentThread()
+                            .isInterrupted()
+            ).isTrue();
+
+            verify(stateService)
+                    .markFailed(
+                            first.id(),
+                            first.claimToken(),
+                            "Kafka publishing was interrupted"
+                    );
+
+            verify(
+                    kafkaTemplate,
+                    never()
+            ).send(
+                    second.topic(),
+                    second.key(),
+                    second.payload()
+            );
+
+        } finally {
+            Thread.interrupted();
+        }
+    }
+
+    @Test
+    void shouldNotMarkFailedWhenKafkaAckSucceededButDbUpdateFailed() {
+        ClaimedOutboxEvent event =
+                event();
+
+        when(
+                claimService.claimBatch(
+                        100,
+                        Duration.ofMinutes(1)
+                )
+        ).thenReturn(
+                List.of(event)
+        );
+
+        CompletableFuture<SendResult<String, String>>
+                future =
+                CompletableFuture.completedFuture(
+                        null
+                );
+
+        when(
+                kafkaTemplate.send(
+                        event.topic(),
+                        event.key(),
+                        event.payload()
+                )
+        ).thenReturn(future);
+
+        doThrow(
+                new IllegalStateException(
+                        "database unavailable"
+                )
+        )
+                .when(stateService)
+                .markPublished(
+                        event.id(),
+                        event.claimToken()
+                );
+
+        publisher.publishBatch();
+
+        verify(stateService)
+                .markPublished(
+                        event.id(),
+                        event.claimToken()
+                );
+
+        verify(
+                stateService,
+                never()
+        ).markFailed(
+                any(),
+                any(),
+                anyString()
         );
     }
 

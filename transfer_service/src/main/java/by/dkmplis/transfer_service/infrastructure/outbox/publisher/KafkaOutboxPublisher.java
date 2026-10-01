@@ -1,7 +1,7 @@
 package by.dkmplis.transfer_service.infrastructure.outbox.publisher;
 
-import by.dkmplis.transfer_service.infrastructure.outbox.exception.OutboxClaimLostException;
 import by.dkmplis.transfer_service.infrastructure.outbox.config.OutboxPublisherProperties;
+import by.dkmplis.transfer_service.infrastructure.outbox.exception.OutboxClaimLostException;
 import by.dkmplis.transfer_service.infrastructure.outbox.service.OutboxClaimService;
 import by.dkmplis.transfer_service.infrastructure.outbox.service.OutboxStateService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +10,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Component
 @RequiredArgsConstructor
@@ -30,11 +32,14 @@ public class KafkaOutboxPublisher {
                 );
 
         for (ClaimedOutboxEvent event : events) {
-            publish(event);
+            boolean continueBatch = publish(event);
+            if (!continueBatch) {
+                return;
+            }
         }
     }
 
-    private void publish(
+    private boolean publish(
             ClaimedOutboxEvent event
     ) {
         try {
@@ -47,10 +52,7 @@ public class KafkaOutboxPublisher {
                             properties.sendTimeout().toMillis(),
                             TimeUnit.MILLISECONDS
                     );
-            stateService.markPublished(
-                    event.id(),
-                    event.claimToken()
-            );
+
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
 
@@ -59,12 +61,46 @@ public class KafkaOutboxPublisher {
                     "Kafka publishing was interrupted"
 
             );
-        } catch (Exception exception) {
+
+            return false;
+
+        } catch (TimeoutException exception) {
+            log.warn(
+                    "Kafka send timed out; delivery status is uncertain "
+                            + "and event may be retried: outboxId={}",
+                    event.id()
+            );
+
             markFailed(
                     event,
-                    exception.getMessage()
+                    "Kafka publishing timed out"
             );
+
+            return true;
+
+        } catch (ExecutionException exception) {
+            markFailed(
+                    event,
+                    errorMessage(
+                            exception.getCause() != null
+                                    ? exception.getCause()
+                                    : exception
+                    )
+            );
+
+            return true;
+
+        } catch (RuntimeException exception) {
+            markFailed(
+                    event,
+                    errorMessage(exception)
+            );
+
+            return true;
         }
+
+        markPublishedAfterKafkaAck(event);
+        return true;
     }
 
     private void markFailed(
@@ -83,5 +119,46 @@ public class KafkaOutboxPublisher {
                     event.id()
             );
         }
+    }
+
+    private void markPublishedAfterKafkaAck(
+            ClaimedOutboxEvent event
+    ) {
+        try {
+            stateService.markPublished(
+                    event.id(),
+                    event.claimToken()
+            );
+
+        } catch (OutboxClaimLostException exception) {
+            log.warn(
+                    "Kafka acknowledged outbox event, "
+                            + "but its claim was already lost: outboxId={}",
+                    event.id()
+            );
+
+        } catch (RuntimeException exception) {
+            log.error(
+                    "Kafka acknowledged outbox event, "
+                            + "but database state could not be marked as published. "
+                            + "The event may be delivered again after claim recovery: "
+                            + "outboxId={}",
+                    event.id(),
+                    exception
+            );
+        }
+    }
+
+    private String errorMessage(
+            Throwable throwable
+    ) {
+        String message = throwable.getMessage();
+
+        if (message == null || message.isBlank()) {
+            return throwable.getClass()
+                    .getSimpleName();
+        }
+
+        return message;
     }
 }
