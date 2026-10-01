@@ -37,6 +37,15 @@ public class InboxEventService {
                         )
                 );
 
+        if (registered == 0) {
+            validateDuplicate(
+                    inboxEvent,
+                    event,
+                    rawEventJson
+            );
+        }
+
+
         return new InboxRegistration(
                 registered == 1,
                 inboxEvent.getProcessedAt() != null
@@ -69,5 +78,28 @@ public class InboxEventService {
         throw new IllegalStateException(
                 "Failed to mark inbox event as processed"
         );
+    }
+
+    private void validateDuplicate(
+            InboxEvent existing,
+            EventEnvelope<?> incoming,
+            String rawEventJson
+    ) {
+        boolean sameEvent =
+                existing.getEventType()
+                        .equals(incoming.eventType())
+                        && existing.getEventVersion()
+                        == incoming.eventVersion()
+                        && existing.getAggregateId()
+                        .equals(incoming.aggregateId())
+                        && existing.getPayload()
+                        .equals(rawEventJson);
+
+        if (!sameEvent) {
+            throw new IllegalStateException(
+                    "Inbox event id collision: "
+                            + incoming.eventId()
+            );
+        }
     }
 }
