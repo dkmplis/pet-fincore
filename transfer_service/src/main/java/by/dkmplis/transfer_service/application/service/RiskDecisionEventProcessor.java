@@ -101,7 +101,7 @@ public class RiskDecisionEventProcessor {
                 .state();
 
         switch (state) {
-            case PENDING -> stateService.markRejected(
+            case PENDING -> stateService.markRiskRejected(
                     event.aggregateId()
             );
 

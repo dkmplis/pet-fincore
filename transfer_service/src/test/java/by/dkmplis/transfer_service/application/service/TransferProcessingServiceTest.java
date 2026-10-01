@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -94,6 +95,69 @@ class TransferProcessingServiceTest
 
         verify(ledgerClient)
                 .postTransfer(any());
+    }
+
+    @Test
+    void shouldRejectPendingTransferByRiskDecision() {
+        CreateTransferResult created =
+                transferService.create(command());
+
+        TransferState result =
+                stateService.markRiskRejected(
+                        created.transferId()
+                );
+
+        assertThat(result)
+                .isEqualTo(
+                        TransferState.REJECTED
+                );
+
+        Transfer persisted =
+                transferRepository
+                        .findById(
+                                created.transferId()
+                        )
+                        .orElseThrow();
+
+        assertThat(persisted.getState())
+                .isEqualTo(
+                        TransferState.REJECTED
+                );
+    }
+
+    @Test
+    void shouldNotApplyRiskRejectionAfterRiskApproval() {
+        CreateTransferResult created =
+                transferService.create(command());
+
+        stateService.markRiskApproved(
+                created.transferId()
+        );
+
+        assertThatThrownBy(
+                () -> stateService.markRiskRejected(
+                        created.transferId()
+                )
+        )
+                .isInstanceOf(
+                        IllegalStateException.class
+                )
+                .hasMessage(
+                        "Risk rejection can only be applied "
+                                + "to pending transfer"
+                );
+
+        Transfer persisted =
+                transferRepository
+                        .findById(
+                                created.transferId()
+                        )
+                        .orElseThrow();
+
+        assertThat(persisted.getState())
+                .isEqualTo(
+                        TransferState.RISK_APPROVED
+                );
     }
 
     private CreateTransferCommand command() {

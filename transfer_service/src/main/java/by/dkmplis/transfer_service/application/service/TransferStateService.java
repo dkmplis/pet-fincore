@@ -114,4 +114,41 @@ public class TransferStateService {
 
         return transfer.getState();
     }
+
+    @Transactional
+    public TransferState markRiskRejected(
+            UUID transferId
+    ) {
+        Transfer transfer = transferRepository
+                .findByIdForUpdate(transferId)
+                .orElseThrow(
+                        () -> new TransferNotFoundException(
+                                transferId
+                        )
+                );
+
+        if (transfer.getState() == TransferState.REJECTED) {
+            return TransferState.REJECTED;
+        }
+
+        if (transfer.getState() != TransferState.PENDING) {
+            throw new IllegalStateException(
+                    "Risk rejection can only be applied "
+                            + "to pending transfer"
+            );
+        }
+
+        transfer.reject();
+
+        eventPublisher.publish(
+                new TransferRejectedEvent(
+                        UUID.randomUUID(),
+                        transfer.getId(),
+                        Instant.now(),
+                        new TransferRejectedPayload()
+                )
+        );
+
+        return transfer.getState();
+    }
 }
